@@ -264,6 +264,7 @@ export default function ResultsPage() {
         .from('projects')
         .update({
           current_step: 'Results',
+          status: 'Completed',
           updated_at: new Date().toISOString(),
         })
         .eq('id', projectId);
@@ -277,6 +278,7 @@ export default function ResultsPage() {
       setError(
         finishError?.message ||
           finishError?.details ||
+          finishError?.hint ||
           'Analysis could not be completed.'
       );
     } finally {
