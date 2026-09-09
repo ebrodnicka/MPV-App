@@ -27,6 +27,7 @@ export default function ConfigurationPage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
@@ -90,7 +91,12 @@ export default function ConfigurationPage() {
     );
 
     setParameters(loadedParameters);
-    setOriginalIds(loadedParameters.map((parameter) => parameter.id!));
+
+    setOriginalIds(
+      loadedParameters
+        .filter((parameter) => parameter.id)
+        .map((parameter) => parameter.id as string)
+    );
 
     setLoading(false);
   }
@@ -137,7 +143,7 @@ export default function ConfigurationPage() {
 
     if (parameters.length === 0) {
       setError('Add at least one parameter.');
-      return;
+      return false;
     }
 
     const incomplete = parameters.some(
@@ -150,7 +156,7 @@ export default function ConfigurationPage() {
 
     if (incomplete) {
       setError('Complete all parameter fields before saving.');
-      return;
+      return false;
     }
 
     setSaving(true);
@@ -219,17 +225,32 @@ export default function ConfigurationPage() {
         throw projectError;
       }
 
+      await loadPage();
+
       setMessage('Configuration saved successfully ✅');
 
-      await loadPage();
+      return true;
     } catch (saveError: any) {
+      console.error('CONFIGURATION SAVE ERROR:', saveError);
+
       setError(
         saveError?.message ||
           saveError?.details ||
+          saveError?.hint ||
           'Configuration could not be saved.'
       );
+
+      return false;
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function continueToInputMatrix() {
+    const saved = await saveConfiguration();
+
+    if (saved) {
+      router.push(`/project/${projectId}/input-matrix`);
     }
   }
 
@@ -456,6 +477,7 @@ export default function ConfigurationPage() {
           <div className="mt-7 grid gap-4 sm:grid-cols-2">
             <div className="rounded-2xl border border-[#dbe8f2] bg-white p-5">
               <p className="text-sm text-[#60788A]">Parameters</p>
+
               <p className="mt-2 text-3xl font-bold text-[#153A5B]">
                 {parameters.length}
               </p>
@@ -463,6 +485,7 @@ export default function ConfigurationPage() {
 
             <div className="rounded-2xl border border-[#dbe8f2] bg-white p-5">
               <p className="text-sm text-[#60788A]">Total weight</p>
+
               <p className="mt-2 text-3xl font-bold text-[#153A5B]">
                 {totalWeight}
               </p>
@@ -496,6 +519,14 @@ export default function ConfigurationPage() {
             className="mt-3 w-full rounded-xl bg-[#17496D] px-6 py-4 font-bold text-white disabled:opacity-50"
           >
             {saving ? 'Saving...' : 'Save Configuration'}
+          </button>
+
+          <button
+            onClick={continueToInputMatrix}
+            disabled={saving}
+            className="mt-3 w-full rounded-xl bg-[#4EA3E3] px-6 py-4 font-bold text-white disabled:opacity-50"
+          >
+            {saving ? 'Saving...' : 'Continue to Input Matrix →'}
           </button>
         </div>
       </section>
